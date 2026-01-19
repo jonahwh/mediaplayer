@@ -99,7 +99,7 @@ fun Track(trackInfo: TrackInfo) {
         .clip(MaterialTheme.shapes.extraSmall),
       model = trackInfo.artUrl,
       contentDescription = null,
-      fallback = painterResource(R.drawable.no_art)
+      fallback = painterResource(R.drawable.no_art),
     )
     Spacer(Modifier.width(16.dp))
     Column(Modifier.align(Alignment.CenterVertically)) {

@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import kotlin.time.Duration.Companion.seconds
 
@@ -23,17 +24,15 @@ class MainActivity : ComponentActivity() {
     setContent {
       MyApplicationTheme {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-          Column(Modifier.padding(innerPadding)) {
+          Column(Modifier.padding(innerPadding).padding(horizontal = 16.dp)) {
             MusicPlayer(
               TrackInfo(
-                "http://example.com",
-                "title",
-                "artist",
+                "https://blocks.astratic.com/img/general-img-square.png",
+                "Black Friday (pretty like the sun)",
+                "Lost Frequencies, Tom Odell, Poppy Baskcomb",
                 311.seconds,
                 false
-              ),
-              0.5f,
-              30.seconds
+              ), 0.5f, 60.seconds
             )
           }
         }
