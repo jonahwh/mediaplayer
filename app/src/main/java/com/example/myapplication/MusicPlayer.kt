@@ -2,12 +2,18 @@
 
 package com.example.myapplication
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -124,6 +130,7 @@ fun MusicPlayer(
   onNextClick: () -> Unit = {},
   onPrevClick: () -> Unit = {},
   onSeek: (Duration) -> Unit = {},
+  isForwardAnimation: Boolean = true,
 ) {
   var draggingProgress by remember { mutableStateOf<Duration?>(null) }
 
@@ -137,7 +144,21 @@ fun MusicPlayer(
       )
       .padding(26.dp), verticalArrangement = Arrangement.Top
   ) {
-    Box(Modifier.padding(horizontal = 6.dp)) { Track(trackInfo) }
+    Box(Modifier.padding(horizontal = 6.dp)) {
+      AnimatedContent(
+        targetState = trackInfo.artUrl + trackInfo.title,
+        transitionSpec = {
+          if (isForwardAnimation) {
+            slideInHorizontally { it } + fadeIn() togetherWith slideOutHorizontally { -it } + fadeOut()
+          } else {
+            slideInHorizontally { -it } + fadeIn() togetherWith slideOutHorizontally { it } + fadeOut()
+          }
+        },
+        label = "TrackAnimation"
+      ) { _ ->
+        Track(trackInfo)
+      }
+    }
     Spacer(Modifier.height(height = 31.dp))
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
       Progress(

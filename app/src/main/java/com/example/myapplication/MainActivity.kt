@@ -106,6 +106,7 @@ class MainActivity : ComponentActivity() {
     var currentPosition by remember { mutableLongStateOf(0L) }
     var trackDuration by remember { mutableLongStateOf(0L) }
     var bufferedPercent by remember { mutableFloatStateOf(0f) }
+    var isForwardAnimation by remember { mutableStateOf(true) }
 
     val currentTrack = playlist[currentTrackIndex]
 
@@ -157,6 +158,7 @@ class MainActivity : ComponentActivity() {
               exoPlayer.seekTo(0)
               exoPlayer.play()
             } else if (repeatMode == RepeatMode.All || currentTrackIndex < playlist.lastIndex) {
+              isForwardAnimation = true
               if (currentTrackIndex < playlist.lastIndex) {
                 currentTrackIndex++
               } else if (repeatMode == RepeatMode.All) {
@@ -252,6 +254,7 @@ class MainActivity : ComponentActivity() {
         playlist[currentTrackIndex] = updatedTrack
       },
       onNextClick = {
+        isForwardAnimation = true
         if (currentTrackIndex < playlist.lastIndex) {
           currentTrackIndex++
         } else if (repeatMode == RepeatMode.All) {
@@ -259,6 +262,7 @@ class MainActivity : ComponentActivity() {
         }
       },
       onPrevClick = {
+        isForwardAnimation = false
         if (currentPosition > 3000) {
           exoPlayer.seekTo(0)
           currentPosition = 0
@@ -273,7 +277,8 @@ class MainActivity : ComponentActivity() {
       onSeek = { seekDuration ->
         exoPlayer.seekTo(seekDuration.inWholeMilliseconds)
         currentPosition = seekDuration.inWholeMilliseconds
-      }
+      },
+      isForwardAnimation = isForwardAnimation
     )
   }
 }
