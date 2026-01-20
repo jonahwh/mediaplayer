@@ -4,10 +4,13 @@ package com.example.myapplication
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +60,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -311,12 +315,20 @@ private fun Controls(
     
     PlayerButton(icon = repeatIcon, onClick = onRepeatModeClick)
     PlayerButton(icon = Icons.Filled.SkipPrevious, onClick = {})
+    
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(targetValue = if (isPressed) 1.2f else 1f, label = "scale")
+
     Button(
       onClick = {},
-      modifier = Modifier.size(72.dp),
+      modifier = Modifier
+        .size(72.dp)
+        .scale(scale),
       shape = CircleShape,
       colors = ButtonDefaults.buttonColors(containerColor = Selected),
-      contentPadding = PaddingValues(0.dp)
+      contentPadding = PaddingValues(0.dp),
+      interactionSource = interactionSource
     ) {
       Icon(
         imageVector = Icons.Filled.Pause,
@@ -336,6 +348,10 @@ private fun PlayerButton(
   onClick: () -> Unit,
   tint: Color = MaterialTheme.colorScheme.onSurface
 ) {
+  val interactionSource = remember { MutableInteractionSource() }
+  val isPressed by interactionSource.collectIsPressedAsState()
+  val scale by animateFloatAsState(targetValue = if (isPressed) 1.5f else 1f, label = "scale")
+
   CompositionLocalProvider(
     LocalRippleConfiguration provides RippleConfiguration(
       color = Color.White,
@@ -343,11 +359,15 @@ private fun PlayerButton(
         draggedAlpha = 0.16f,
         focusedAlpha = 0.12f,
         hoveredAlpha = 0.08f,
-        pressedAlpha = 0.5f
+        pressedAlpha = 0.4f
       )
     )
   ) {
-    IconButton(onClick = onClick) {
+    IconButton(
+      onClick = onClick,
+      interactionSource = interactionSource,
+      modifier = Modifier.scale(scale)
+    ) {
       Icon(
         imageVector = icon,
         contentDescription = null,
