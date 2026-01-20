@@ -1,1 +1,1 @@
-[Download Demo video](https://github.com/jonahwh/mediaplayer/blob/main/demo.mp4)
+[Download Demo video](https://raw.githubusercontent.com/jonahwh/mediaplayer/refs/heads/main/demo.mp4)
