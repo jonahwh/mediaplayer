@@ -155,7 +155,7 @@ fun MusicPlayer(
     ) {
       Box(Modifier.padding(horizontal = 6.dp)) {
         AnimatedContent(
-          targetState = trackInfo.artUrl + trackInfo.title,
+          targetState = trackInfo,
           transitionSpec = {
             if (isForwardAnimation) {
               slideInHorizontally { it } + fadeIn() togetherWith slideOutHorizontally { -it } + fadeOut()
@@ -163,9 +163,10 @@ fun MusicPlayer(
               slideInHorizontally { -it } + fadeIn() togetherWith slideOutHorizontally { it } + fadeOut()
             }
           },
-          label = "TrackAnimation"
-        ) { _ ->
-          Track(trackInfo)
+          label = "TrackAnimation",
+          contentKey = { it.artUrl + it.title }
+        ) { currentTrack ->
+          Track(currentTrack)
         }
       }
       Spacer(Modifier.height(height = verticalSpacerHeight))
