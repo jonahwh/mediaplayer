@@ -243,11 +243,11 @@ fun MarqueeText(
 
 @Composable
 fun Progress(bufferedPercent: Float, progress: Duration, duration: Duration) {
-  var progressFloat by remember { mutableFloatStateOf(progress.inWholeSeconds.toFloat()) }
-  val durationFloat = if (duration.isPositive()) duration.inWholeSeconds.toFloat() else 0f
+  var progressFloat by remember { mutableFloatStateOf(progress.inWholeMilliseconds.toFloat()) }
+  val durationFloat = if (duration.isPositive()) duration.inWholeMilliseconds.toFloat() else 0f
 
   LaunchedEffect(progress) {
-    progressFloat = progress.inWholeSeconds.toFloat()
+    progressFloat = progress.inWholeMilliseconds.toFloat()
   }
 
   Slider(
