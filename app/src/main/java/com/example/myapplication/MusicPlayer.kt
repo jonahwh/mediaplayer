@@ -2,7 +2,9 @@
 
 package com.example.myapplication
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -55,11 +58,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
@@ -69,6 +74,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import coil3.annotation.ExperimentalCoilApi
 import coil3.asImage
@@ -77,6 +83,7 @@ import coil3.compose.AsyncImagePreviewHandler
 import coil3.compose.LocalAsyncImagePreviewHandler
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.Selected
+import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
@@ -90,8 +97,16 @@ data class TrackInfo(
 )
 
 enum class RepeatMode {
-    None, All, One
+  None, All, One
 }
+
+private data class HeartParticle(
+  val id: Long,
+  val targetX: Float,
+  val targetY: Float,
+  val size: Float,
+  val duration: Int,
+)
 
 @Composable
 fun MusicPlayer(
@@ -123,7 +138,14 @@ fun MusicPlayer(
     Spacer(Modifier.height(height = 3.dp))
     Box(Modifier.padding(horizontal = 6.dp)) { Timers(progress, trackInfo.duration) }
     Spacer(Modifier.height(15.dp))
-    Controls(repeatMode, onRepeatModeClick, isPlaying, onPlayPauseClick, isFavorite, onFavoriteClick)
+    Controls(
+      repeatMode,
+      onRepeatModeClick,
+      isPlaying,
+      onPlayPauseClick,
+      isFavorite,
+      onFavoriteClick
+    )
   }
 }
 
@@ -202,7 +224,7 @@ fun MarqueeText(
   style: TextStyle,
   color: Color,
   scrollState: ScrollState,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
 ) {
   Text(
     text = text,
@@ -222,60 +244,60 @@ fun Progress(bufferedPercent: Float, progress: Duration, duration: Duration) {
 
   Slider(
     value = progressFloat,
-         onValueChange = { progressFloat = it },
-         colors = SliderDefaults.colors(
-           thumbColor = MaterialTheme.colorScheme.secondary,
-           activeTrackColor = MaterialTheme.colorScheme.secondary,
-           inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
-         ),
-         valueRange = 0f..durationFloat,
-         modifier = Modifier.height(12.dp),
-         thumb = {
-           Box(
-             Modifier
-               .padding(top = 1.5.dp)
-               .size(12.dp)
-               .background(Color.White, CircleShape)
-           )
-         },
-         track = {
-           Box(
-             modifier = Modifier
-               .height(3.16.dp)
-               .fillMaxWidth()
-           ) {
-             Box(
-               modifier = Modifier
-                 .fillMaxWidth()
-                 .fillMaxHeight()
-                 .background(MaterialTheme.colorScheme.outlineVariant)
-             )
-           }
-           Box(
-             modifier = Modifier
-               .height(3.16.dp)
-               .fillMaxWidth()
-           ) {
-             Box(
-               modifier = Modifier
-                 .fillMaxWidth(bufferedPercent)
-                 .fillMaxHeight()
-                 .background(MaterialTheme.colorScheme.outline)
-             )
-           }
-           Box(
-             modifier = Modifier
-               .height(3.16.dp)
-               .fillMaxWidth()
-           ) {
-             Box(
-               modifier = Modifier
-                 .fillMaxWidth((progress / duration).toFloat())
-                 .fillMaxHeight()
-                 .background(MaterialTheme.colorScheme.onPrimary)
-             )
-           }
-         })
+    onValueChange = { progressFloat = it },
+    colors = SliderDefaults.colors(
+      thumbColor = MaterialTheme.colorScheme.secondary,
+      activeTrackColor = MaterialTheme.colorScheme.secondary,
+      inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
+    ),
+    valueRange = 0f..durationFloat,
+    modifier = Modifier.height(12.dp),
+    thumb = {
+      Box(
+        Modifier
+          .padding(top = 1.5.dp)
+          .size(12.dp)
+          .background(Color.White, CircleShape)
+      )
+    },
+    track = {
+      Box(
+        modifier = Modifier
+          .height(3.16.dp)
+          .fillMaxWidth()
+      ) {
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight()
+            .background(MaterialTheme.colorScheme.outlineVariant)
+        )
+      }
+      Box(
+        modifier = Modifier
+          .height(3.16.dp)
+          .fillMaxWidth()
+      ) {
+        Box(
+          modifier = Modifier
+            .fillMaxWidth(bufferedPercent)
+            .fillMaxHeight()
+            .background(MaterialTheme.colorScheme.outline)
+        )
+      }
+      Box(
+        modifier = Modifier
+          .height(3.16.dp)
+          .fillMaxWidth()
+      ) {
+        Box(
+          modifier = Modifier
+            .fillMaxWidth((progress / duration).toFloat())
+            .fillMaxHeight()
+            .background(MaterialTheme.colorScheme.onPrimary)
+        )
+      }
+    })
 }
 
 @Composable
@@ -317,14 +339,14 @@ private fun Controls(
     verticalAlignment = Alignment.CenterVertically
   ) {
     val repeatIcon = when (repeatMode) {
-        RepeatMode.None -> Icons.Filled.Repeat
-        RepeatMode.All -> Icons.Filled.RepeatOn
-        RepeatMode.One -> Icons.Filled.RepeatOneOn
+      RepeatMode.None -> Icons.Filled.Repeat
+      RepeatMode.All -> Icons.Filled.RepeatOn
+      RepeatMode.One -> Icons.Filled.RepeatOneOn
     }
-    
+
     PlayerButton(icon = repeatIcon, onClick = onRepeatModeClick)
     PlayerButton(icon = Icons.Filled.SkipPrevious, onClick = {})
-    
+
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (isPressed) 1.2f else 1f, label = "scale")
@@ -347,17 +369,75 @@ private fun Controls(
       )
     }
     PlayerButton(icon = Icons.Filled.SkipNext, onClick = {})
-    
+
     val favoriteIcon = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
-    PlayerButton(icon = favoriteIcon, onClick = onFavoriteClick)
+
+    Box(contentAlignment = Alignment.Center) {
+      val hearts = remember { mutableStateListOf<HeartParticle>() }
+
+      hearts.forEach { heart ->
+        FloatingHeart(heart) {
+          hearts.remove(heart)
+        }
+      }
+
+      PlayerButton(
+        icon = favoriteIcon,
+        onClick = {
+          if (!isFavorite) {
+            repeat(5) {
+              hearts.add(
+                HeartParticle(
+                  id = Random.nextLong(),
+                  targetX = Random.nextFloat() * 100f - 50f,
+                  targetY = Random.nextFloat() * -100f - 50f,
+                  size = Random.nextFloat() * 10f + 20f,
+                  duration = Random.nextInt(500, 1000)
+                )
+              )
+            }
+          }
+          onFavoriteClick()
+        }
+      )
+    }
   }
+}
+
+@Composable
+private fun FloatingHeart(particle: HeartParticle, onComplete: () -> Unit) {
+  val progress = remember { Animatable(0f) }
+
+  LaunchedEffect(particle) {
+    progress.animateTo(
+      targetValue = 1f,
+      animationSpec = tween(durationMillis = particle.duration, easing = LinearEasing)
+    )
+    onComplete()
+  }
+
+  val x = particle.targetX * progress.value
+  val y = particle.targetY * progress.value
+  val alpha = 1f - progress.value
+  val scale = 1f - (progress.value * 0.5f)
+
+  Icon(
+    imageVector = Icons.Filled.Favorite,
+    contentDescription = null,
+    tint = Color.Red,
+    modifier = Modifier
+      .size(particle.size.dp)
+      .offset { IntOffset(x.dp.roundToPx(), y.dp.roundToPx()) }
+      .alpha(alpha)
+      .scale(scale)
+  )
 }
 
 @Composable
 private fun PlayerButton(
   icon: ImageVector,
   onClick: () -> Unit,
-  tint: Color = MaterialTheme.colorScheme.onSurface
+  tint: Color = MaterialTheme.colorScheme.onSurface,
 ) {
   val interactionSource = remember { MutableInteractionSource() }
   val isPressed by interactionSource.collectIsPressedAsState()
