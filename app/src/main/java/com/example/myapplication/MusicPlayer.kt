@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalCoilApi::class, ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.example.myapplication
 
@@ -15,6 +15,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -30,7 +31,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -77,6 +77,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -84,11 +85,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import coil3.annotation.ExperimentalCoilApi
-import coil3.asImage
-import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePreviewHandler
-import coil3.compose.LocalAsyncImagePreviewHandler
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.Selected
 import kotlin.random.Random
@@ -96,7 +92,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 data class TrackInfo(
   val artUrl: String,
@@ -211,14 +206,23 @@ fun MusicPlayer(
 
 @Composable
 fun Track(trackInfo: TrackInfo) {
+  val context = LocalContext.current
+  val imageResId = remember(trackInfo.artUrl) {
+    if (trackInfo.artUrl.isNotEmpty()) {
+      context.resources.getIdentifier(trackInfo.artUrl, "drawable", context.packageName)
+    } else {
+      0
+    }
+  }
+
   Row(Modifier.fillMaxWidth()) {
-    AsyncImage(
+    Image(
       modifier = Modifier
         .size(88.dp)
         .clip(MaterialTheme.shapes.extraSmall),
-      model = trackInfo.artUrl,
+      painter = if (imageResId != 0) painterResource(imageResId) else painterResource(R.drawable.no_art),
       contentDescription = null,
-      fallback = painterResource(R.drawable.no_art),
+      contentScale = ContentScale.Crop
     )
     Spacer(Modifier.width(16.dp))
     Column(
@@ -602,41 +606,34 @@ private fun PlayerButton(
 fun MusicPlayerPreview() {
   val context = LocalContext.current
 
-  val previewHandler = AsyncImagePreviewHandler {
-    context.getDrawable(R.drawable.no_art)!!.asImage()
-  }
-
-  CompositionLocalProvider(LocalAsyncImagePreviewHandler provides previewHandler) {
-
-    MyApplicationTheme {
-      Box {
-        var repeatMode by remember { mutableStateOf(RepeatMode.None) }
-        var isPlaying by remember { mutableStateOf(false) }
-        var isFavorite by remember { mutableStateOf(false) }
-        MusicPlayer(
-          TrackInfo(
-            "http://example.com",
-            "Black Friday (pretty like the sun)",
-            "Lost Frequencies, Tom Odell, Poppy Baskcomb",
-            311.seconds,
-            false
-          ),
-          0.5f,
-          60.seconds,
-          repeatMode = repeatMode,
-          onRepeatModeClick = {
-            repeatMode = when (repeatMode) {
-              RepeatMode.None -> RepeatMode.All
-              RepeatMode.All -> RepeatMode.One
-              RepeatMode.One -> RepeatMode.None
-            }
-          },
-          isPlaying = isPlaying,
-          onPlayPauseClick = { isPlaying = !isPlaying },
-          isFavorite = isFavorite,
-          onFavoriteClick = { isFavorite = !isFavorite }
-        )
-      }
+  MyApplicationTheme {
+    Box {
+      var repeatMode by remember { mutableStateOf(RepeatMode.None) }
+      var isPlaying by remember { mutableStateOf(false) }
+      var isFavorite by remember { mutableStateOf(false) }
+      MusicPlayer(
+        TrackInfo(
+          "",
+          "Black Friday (pretty like the sun)",
+          "Lost Frequencies, Tom Odell, Poppy Baskcomb",
+          311.seconds,
+          false
+        ),
+        0.5f,
+        60.seconds,
+        repeatMode = repeatMode,
+        onRepeatModeClick = {
+          repeatMode = when (repeatMode) {
+            RepeatMode.None -> RepeatMode.All
+            RepeatMode.All -> RepeatMode.One
+            RepeatMode.One -> RepeatMode.None
+          }
+        },
+        isPlaying = isPlaying,
+        onPlayPauseClick = { isPlaying = !isPlaying },
+        isFavorite = isFavorite,
+        onFavoriteClick = { isFavorite = !isFavorite }
+      )
     }
   }
 }

@@ -37,7 +37,6 @@ data class AudioTrack(
   val resName: String,
   val title: String,
   val artist: String,
-  val artUrl: String = "https://blocks.astratic.com/img/general-img-square.png",
   val isFavorite: Boolean = false,
 )
 
@@ -228,7 +227,7 @@ class MainActivity : ComponentActivity() {
 
     MusicPlayer(
       TrackInfo(
-        artUrl = currentTrack.artUrl,
+        artUrl = currentTrack.resName,
         title = currentTrack.title,
         artist = currentTrack.artist,
         duration = trackDuration.milliseconds,
