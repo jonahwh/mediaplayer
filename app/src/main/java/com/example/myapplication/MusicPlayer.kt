@@ -30,9 +30,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOn
-import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.RepeatOneOn
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -76,9 +76,9 @@ import coil3.compose.AsyncImagePreviewHandler
 import coil3.compose.LocalAsyncImagePreviewHandler
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.Selected
-import kotlinx.coroutines.delay
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 
 data class TrackInfo(
   val artUrl: String,
@@ -99,6 +99,8 @@ fun MusicPlayer(
   progress: Duration,
   repeatMode: RepeatMode = RepeatMode.None,
   onRepeatModeClick: () -> Unit = {},
+  isPlaying: Boolean = false,
+  onPlayPauseClick: () -> Unit = {},
 ) {
   Column(
     Modifier
@@ -118,7 +120,7 @@ fun MusicPlayer(
     Spacer(Modifier.height(height = 3.dp))
     Box(Modifier.padding(horizontal = 6.dp)) { Timers(progress, trackInfo.duration) }
     Spacer(Modifier.height(15.dp))
-    Controls(repeatMode, onRepeatModeClick)
+    Controls(repeatMode, onRepeatModeClick, isPlaying, onPlayPauseClick)
   }
 }
 
@@ -301,6 +303,8 @@ private fun formatDuration(duration: Duration): String {
 private fun Controls(
   repeatMode: RepeatMode,
   onRepeatModeClick: () -> Unit,
+  isPlaying: Boolean,
+  onPlayPauseClick: () -> Unit,
 ) {
   Row(
     Modifier.fillMaxWidth(),
@@ -321,7 +325,7 @@ private fun Controls(
     val scale by animateFloatAsState(targetValue = if (isPressed) 1.2f else 1f, label = "scale")
 
     Button(
-      onClick = {},
+      onClick = onPlayPauseClick,
       modifier = Modifier
         .size(72.dp)
         .scale(scale),
@@ -331,8 +335,8 @@ private fun Controls(
       interactionSource = interactionSource
     ) {
       Icon(
-        imageVector = Icons.Filled.Pause,
-        contentDescription = "Pause",
+        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+        contentDescription = if (isPlaying) "Pause" else "Play",
         tint = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.size(48.dp)
       )
@@ -392,6 +396,7 @@ fun MusicPlayerPreview() {
     MyApplicationTheme {
       Box {
         var repeatMode by remember { mutableStateOf(RepeatMode.None) }
+        var isPlaying by remember { mutableStateOf(false) }
         MusicPlayer(
           TrackInfo(
             "http://example.com",
@@ -409,7 +414,9 @@ fun MusicPlayerPreview() {
               RepeatMode.All -> RepeatMode.One
               RepeatMode.One -> RepeatMode.None
             }
-          }
+          },
+          isPlaying = isPlaying,
+          onPlayPauseClick = { isPlaying = !isPlaying }
         )
       }
     }

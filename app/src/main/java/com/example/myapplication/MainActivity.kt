@@ -7,16 +7,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import kotlin.time.Duration.Companion.seconds
@@ -30,6 +26,7 @@ class MainActivity : ComponentActivity() {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
           Column(Modifier.padding(innerPadding).padding(horizontal = 16.dp)) {
             var repeatMode by remember { mutableStateOf(RepeatMode.None) }
+            var isPlaying by remember { mutableStateOf(false) }
             MusicPlayer(
               TrackInfo(
                 "https://blocks.astratic.com/img/general-img-square.png",
@@ -47,7 +44,9 @@ class MainActivity : ComponentActivity() {
                   RepeatMode.All -> RepeatMode.One
                   RepeatMode.One -> RepeatMode.None
                 }
-              }
+              },
+              isPlaying = isPlaying,
+              onPlayPauseClick = { isPlaying = !isPlaying }
             )
           }
         }
