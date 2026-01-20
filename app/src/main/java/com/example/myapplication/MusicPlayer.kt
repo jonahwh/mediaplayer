@@ -85,6 +85,7 @@ import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.Selected
 import kotlin.random.Random
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 
@@ -121,6 +122,7 @@ fun MusicPlayer(
   onFavoriteClick: () -> Unit = {},
   onNextClick: () -> Unit = {},
   onPrevClick: () -> Unit = {},
+  onSeek: (Duration) -> Unit = {},
 ) {
   Column(
     Modifier
@@ -135,7 +137,7 @@ fun MusicPlayer(
     Box(Modifier.padding(horizontal = 6.dp)) { Track(trackInfo) }
     Spacer(Modifier.height(height = 31.dp))
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-      Progress(bufferedPercent, progress, trackInfo.duration)
+      Progress(bufferedPercent, progress, trackInfo.duration, onSeek)
     }
     Spacer(Modifier.height(height = 3.dp))
     Box(Modifier.padding(horizontal = 6.dp)) { Timers(progress, trackInfo.duration) }
@@ -242,23 +244,38 @@ fun MarqueeText(
 }
 
 @Composable
-fun Progress(bufferedPercent: Float, progress: Duration, duration: Duration) {
-  var progressFloat by remember { mutableFloatStateOf(progress.inWholeMilliseconds.toFloat()) }
-  val durationFloat = if (duration.isPositive()) duration.inWholeMilliseconds.toFloat() else 0f
+fun Progress(
+  bufferedPercent: Float,
+  progress: Duration,
+  duration: Duration,
+  onSeek: (Duration) -> Unit,
+) {
+  var isDragging by remember { mutableStateOf(false) }
+  var sliderValue by remember { mutableFloatStateOf(0f) }
+  val durationMillis = if (duration.isPositive()) duration.inWholeMilliseconds.toFloat() else 0f
 
   LaunchedEffect(progress) {
-    progressFloat = progress.inWholeMilliseconds.toFloat()
+    if (!isDragging) {
+      sliderValue = progress.inWholeMilliseconds.toFloat()
+    }
   }
 
   Slider(
-    value = progressFloat,
-    onValueChange = { progressFloat = it },
+    value = sliderValue,
+    onValueChange = {
+      isDragging = true
+      sliderValue = it
+    },
+    onValueChangeFinished = {
+      onSeek(sliderValue.toLong().milliseconds)
+      isDragging = false
+    },
     colors = SliderDefaults.colors(
       thumbColor = MaterialTheme.colorScheme.secondary,
       activeTrackColor = MaterialTheme.colorScheme.secondary,
       inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
     ),
-    valueRange = 0f..durationFloat,
+    valueRange = 0f..durationMillis,
     modifier = Modifier.height(12.dp),
     thumb = {
       Box(
@@ -300,7 +317,7 @@ fun Progress(bufferedPercent: Float, progress: Duration, duration: Duration) {
       ) {
         Box(
           modifier = Modifier
-            .fillMaxWidth(if (durationFloat > 0) progressFloat / durationFloat else 0f)
+            .fillMaxWidth(if (durationMillis > 0) sliderValue / durationMillis else 0f)
             .fillMaxHeight()
             .background(MaterialTheme.colorScheme.onPrimary)
         )

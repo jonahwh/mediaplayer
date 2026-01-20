@@ -269,6 +269,10 @@ class MainActivity : ComponentActivity() {
             currentTrackIndex = playlist.lastIndex
           }
         }
+      },
+      onSeek = { seekDuration ->
+        exoPlayer.seekTo(seekDuration.inWholeMilliseconds)
+        currentPosition = seekDuration.inWholeMilliseconds
       }
     )
   }
