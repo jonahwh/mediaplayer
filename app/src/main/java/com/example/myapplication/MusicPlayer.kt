@@ -28,6 +28,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOn
+import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.RepeatOneOn
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.ripple.RippleAlpha
@@ -48,6 +51,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -80,11 +84,17 @@ data class TrackInfo(
   val isFavorite: Boolean,
 )
 
+enum class RepeatMode {
+    None, All, One
+}
+
 @Composable
 fun MusicPlayer(
   trackInfo: TrackInfo,
   bufferedPercent: Float,
   progress: Duration,
+  repeatMode: RepeatMode = RepeatMode.None,
+  onRepeatModeClick: () -> Unit = {},
 ) {
   Column(
     Modifier
@@ -104,7 +114,7 @@ fun MusicPlayer(
     Spacer(Modifier.height(height = 3.dp))
     Box(Modifier.padding(horizontal = 6.dp)) { Timers(progress, trackInfo.duration) }
     Spacer(Modifier.height(15.dp))
-    Controls()
+    Controls(repeatMode, onRepeatModeClick)
   }
 }
 
@@ -284,14 +294,23 @@ private fun formatDuration(duration: Duration): String {
 }
 
 @Composable
-private fun Controls() {
+private fun Controls(
+  repeatMode: RepeatMode,
+  onRepeatModeClick: () -> Unit,
+) {
   Row(
     Modifier.fillMaxWidth(),
     horizontalArrangement = Arrangement.spacedBy(16.dp, alignment = Alignment.CenterHorizontally),
     verticalAlignment = Alignment.CenterVertically
   ) {
-    PlayerButton(icon = Icons.Filled.Repeat)
-    PlayerButton(icon = Icons.Filled.SkipPrevious)
+    val repeatIcon = when (repeatMode) {
+        RepeatMode.None -> Icons.Filled.Repeat
+        RepeatMode.All -> Icons.Filled.RepeatOn
+        RepeatMode.One -> Icons.Filled.RepeatOneOn
+    }
+    
+    PlayerButton(icon = repeatIcon, onClick = onRepeatModeClick)
+    PlayerButton(icon = Icons.Filled.SkipPrevious, onClick = {})
     Button(
       onClick = {},
       modifier = Modifier.size(72.dp),
@@ -306,16 +325,20 @@ private fun Controls() {
         modifier = Modifier.size(48.dp)
       )
     }
-    PlayerButton(icon = Icons.Filled.SkipNext)
-    PlayerButton(icon = Icons.Filled.FavoriteBorder)
+    PlayerButton(icon = Icons.Filled.SkipNext, onClick = {})
+    PlayerButton(icon = Icons.Filled.FavoriteBorder, onClick = {})
   }
 }
 
 @Composable
-private fun PlayerButton(icon: ImageVector) {
+private fun PlayerButton(
+  icon: ImageVector,
+  onClick: () -> Unit,
+  tint: Color = MaterialTheme.colorScheme.onSurface
+) {
   CompositionLocalProvider(
     LocalRippleConfiguration provides RippleConfiguration(
-      color = MaterialTheme.colorScheme.onPrimary,
+      color = Color.White,
       rippleAlpha = RippleAlpha(
         draggedAlpha = 0.16f,
         focusedAlpha = 0.12f,
@@ -324,11 +347,11 @@ private fun PlayerButton(icon: ImageVector) {
       )
     )
   ) {
-    IconButton(onClick = {}) {
+    IconButton(onClick = onClick) {
       Icon(
         imageVector = icon,
         contentDescription = null,
-        tint = MaterialTheme.colorScheme.onSurface,
+        tint = tint,
         modifier = Modifier.size(24.dp)
       )
     }
@@ -348,6 +371,7 @@ fun MusicPlayerPreview() {
 
     MyApplicationTheme {
       Box {
+        var repeatMode by remember { mutableStateOf(RepeatMode.None) }
         MusicPlayer(
           TrackInfo(
             "http://example.com",
@@ -355,7 +379,17 @@ fun MusicPlayerPreview() {
             "Lost Frequencies, Tom Odell, Poppy Baskcomb",
             311.seconds,
             false
-          ), 0.5f, 60.seconds
+          ),
+          0.5f,
+          60.seconds,
+          repeatMode = repeatMode,
+          onRepeatModeClick = {
+            repeatMode = when (repeatMode) {
+              RepeatMode.None -> RepeatMode.All
+              RepeatMode.All -> RepeatMode.One
+              RepeatMode.One -> RepeatMode.None
+            }
+          }
         )
       }
     }
