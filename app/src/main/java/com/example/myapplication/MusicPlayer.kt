@@ -119,6 +119,8 @@ fun MusicPlayer(
   onPlayPauseClick: () -> Unit = {},
   isFavorite: Boolean = false,
   onFavoriteClick: () -> Unit = {},
+  onNextClick: () -> Unit = {},
+  onPrevClick: () -> Unit = {},
 ) {
   Column(
     Modifier
@@ -144,7 +146,9 @@ fun MusicPlayer(
       isPlaying,
       onPlayPauseClick,
       isFavorite,
-      onFavoriteClick
+      onFavoriteClick,
+      onNextClick,
+      onPrevClick
     )
   }
 }
@@ -242,6 +246,10 @@ fun Progress(bufferedPercent: Float, progress: Duration, duration: Duration) {
   var progressFloat by remember { mutableFloatStateOf(progress.inWholeSeconds.toFloat()) }
   val durationFloat = if (duration.isPositive()) duration.inWholeSeconds.toFloat() else 0f
 
+  LaunchedEffect(progress) {
+    progressFloat = progress.inWholeSeconds.toFloat()
+  }
+
   Slider(
     value = progressFloat,
     onValueChange = { progressFloat = it },
@@ -292,7 +300,7 @@ fun Progress(bufferedPercent: Float, progress: Duration, duration: Duration) {
       ) {
         Box(
           modifier = Modifier
-            .fillMaxWidth((progress / duration).toFloat())
+            .fillMaxWidth(if (durationFloat > 0) progressFloat / durationFloat else 0f)
             .fillMaxHeight()
             .background(MaterialTheme.colorScheme.onPrimary)
         )
@@ -332,6 +340,8 @@ private fun Controls(
   onPlayPauseClick: () -> Unit,
   isFavorite: Boolean,
   onFavoriteClick: () -> Unit,
+  onNextClick: () -> Unit,
+  onPrevClick: () -> Unit,
 ) {
   Row(
     Modifier.fillMaxWidth(),
@@ -345,7 +355,7 @@ private fun Controls(
     }
 
     PlayerButton(icon = repeatIcon, onClick = onRepeatModeClick)
-    PlayerButton(icon = Icons.Filled.SkipPrevious, onClick = {})
+    PlayerButton(icon = Icons.Filled.SkipPrevious, onClick = onPrevClick)
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -368,7 +378,7 @@ private fun Controls(
         modifier = Modifier.size(48.dp)
       )
     }
-    PlayerButton(icon = Icons.Filled.SkipNext, onClick = {})
+    PlayerButton(icon = Icons.Filled.SkipNext, onClick = onNextClick)
 
     val favoriteIcon = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
 
