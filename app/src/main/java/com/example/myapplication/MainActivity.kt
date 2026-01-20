@@ -27,6 +27,7 @@ class MainActivity : ComponentActivity() {
           Column(Modifier.padding(innerPadding).padding(horizontal = 16.dp)) {
             var repeatMode by remember { mutableStateOf(RepeatMode.None) }
             var isPlaying by remember { mutableStateOf(false) }
+            var isFavorite by remember { mutableStateOf(false) }
             MusicPlayer(
               TrackInfo(
                 "https://blocks.astratic.com/img/general-img-square.png",
@@ -46,7 +47,9 @@ class MainActivity : ComponentActivity() {
                 }
               },
               isPlaying = isPlaying,
-              onPlayPauseClick = { isPlaying = !isPlaying }
+              onPlayPauseClick = { isPlaying = !isPlaying },
+              isFavorite = isFavorite,
+              onFavoriteClick = { isFavorite = !isFavorite }
             )
           }
         }

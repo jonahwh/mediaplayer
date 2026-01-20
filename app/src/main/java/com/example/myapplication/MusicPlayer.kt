@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -101,6 +102,8 @@ fun MusicPlayer(
   onRepeatModeClick: () -> Unit = {},
   isPlaying: Boolean = false,
   onPlayPauseClick: () -> Unit = {},
+  isFavorite: Boolean = false,
+  onFavoriteClick: () -> Unit = {},
 ) {
   Column(
     Modifier
@@ -120,7 +123,7 @@ fun MusicPlayer(
     Spacer(Modifier.height(height = 3.dp))
     Box(Modifier.padding(horizontal = 6.dp)) { Timers(progress, trackInfo.duration) }
     Spacer(Modifier.height(15.dp))
-    Controls(repeatMode, onRepeatModeClick, isPlaying, onPlayPauseClick)
+    Controls(repeatMode, onRepeatModeClick, isPlaying, onPlayPauseClick, isFavorite, onFavoriteClick)
   }
 }
 
@@ -305,6 +308,8 @@ private fun Controls(
   onRepeatModeClick: () -> Unit,
   isPlaying: Boolean,
   onPlayPauseClick: () -> Unit,
+  isFavorite: Boolean,
+  onFavoriteClick: () -> Unit,
 ) {
   Row(
     Modifier.fillMaxWidth(),
@@ -342,7 +347,9 @@ private fun Controls(
       )
     }
     PlayerButton(icon = Icons.Filled.SkipNext, onClick = {})
-    PlayerButton(icon = Icons.Filled.FavoriteBorder, onClick = {})
+    
+    val favoriteIcon = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
+    PlayerButton(icon = favoriteIcon, onClick = onFavoriteClick)
   }
 }
 
@@ -397,6 +404,7 @@ fun MusicPlayerPreview() {
       Box {
         var repeatMode by remember { mutableStateOf(RepeatMode.None) }
         var isPlaying by remember { mutableStateOf(false) }
+        var isFavorite by remember { mutableStateOf(false) }
         MusicPlayer(
           TrackInfo(
             "http://example.com",
@@ -416,7 +424,9 @@ fun MusicPlayerPreview() {
             }
           },
           isPlaying = isPlaying,
-          onPlayPauseClick = { isPlaying = !isPlaying }
+          onPlayPauseClick = { isPlaying = !isPlaying },
+          isFavorite = isFavorite,
+          onFavoriteClick = { isFavorite = !isFavorite }
         )
       }
     }
