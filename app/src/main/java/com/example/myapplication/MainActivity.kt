@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,9 +38,10 @@ data class AudioTrack(
   val title: String,
   val artist: String,
   val artUrl: String = "https://blocks.astratic.com/img/general-img-square.png",
+  val isFavorite: Boolean = false,
 )
 
-val playlist = listOf(
+val initialPlaylist = listOf(
   AudioTrack(
     "blow_the_man_down",
     "Blow The Man Down",
@@ -97,9 +99,9 @@ class MainActivity : ComponentActivity() {
   fun PlayerScreen() {
     val context = LocalContext.current
 
+    val playlist = remember { mutableStateListOf(*initialPlaylist.toTypedArray()) }
     var repeatMode by remember { mutableStateOf(RepeatMode.None) }
     var isPlaying by remember { mutableStateOf(false) }
-    var isFavorite by remember { mutableStateOf(false) }
     var currentTrackIndex by remember { mutableIntStateOf(0) }
     var currentPosition by remember { mutableLongStateOf(0L) }
     var trackDuration by remember { mutableLongStateOf(0L) }
@@ -118,24 +120,29 @@ class MainActivity : ComponentActivity() {
     }
 
     LaunchedEffect(currentTrack) {
-      currentPosition = 0L
-      trackDuration = 0L
-      bufferedPercent = 0f
-
-      exoPlayer.stop()
-      exoPlayer.clearMediaItems()
-
+      val mediaItem = exoPlayer.currentMediaItem
       val resId = context.resources.getIdentifier(currentTrack.resName, "raw", context.packageName)
-      if (resId != 0) {
-        val mediaItem = MediaItem.fromUri("android.resource://${context.packageName}/$resId")
-        exoPlayer.setMediaItem(mediaItem)
-        exoPlayer.prepare()
+      val uri = "android.resource://${context.packageName}/$resId"
 
-        if (isPlaying) {
-          exoPlayer.play()
+      if (mediaItem?.localConfiguration?.uri.toString() != uri) {
+        currentPosition = 0L
+        trackDuration = 0L
+        bufferedPercent = 0f
+
+        exoPlayer.stop()
+        exoPlayer.clearMediaItems()
+
+        if (resId != 0) {
+          val newMediaItem = MediaItem.fromUri(uri)
+          exoPlayer.setMediaItem(newMediaItem)
+          exoPlayer.prepare()
+
+          if (isPlaying) {
+            exoPlayer.play()
+          }
+        } else {
+          Log.e("MainActivity", "Resource not found: ${currentTrack.resName}")
         }
-      } else {
-        Log.e("MainActivity", "Resource not found: ${currentTrack.resName}")
       }
     }
 
@@ -223,7 +230,7 @@ class MainActivity : ComponentActivity() {
         title = currentTrack.title,
         artist = currentTrack.artist,
         duration = trackDuration.milliseconds,
-        isFavorite = isFavorite
+        isFavorite = currentTrack.isFavorite
       ),
       bufferedPercent = bufferedPercent,
       progress = currentPosition.milliseconds,
@@ -239,8 +246,11 @@ class MainActivity : ComponentActivity() {
       onPlayPauseClick = {
         isPlaying = !isPlaying
       },
-      isFavorite = isFavorite,
-      onFavoriteClick = { isFavorite = !isFavorite },
+      isFavorite = currentTrack.isFavorite,
+      onFavoriteClick = {
+        val updatedTrack = currentTrack.copy(isFavorite = !currentTrack.isFavorite)
+        playlist[currentTrackIndex] = updatedTrack
+      },
       onNextClick = {
         if (currentTrackIndex < playlist.lastIndex) {
           currentTrackIndex++
