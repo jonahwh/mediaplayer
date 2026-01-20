@@ -88,6 +88,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 data class TrackInfo(
   val artUrl: String,
@@ -124,6 +125,8 @@ fun MusicPlayer(
   onPrevClick: () -> Unit = {},
   onSeek: (Duration) -> Unit = {},
 ) {
+  var draggingProgress by remember { mutableStateOf<Duration?>(null) }
+
   Column(
     Modifier
       .widthIn(max = 480.dp)
@@ -137,10 +140,23 @@ fun MusicPlayer(
     Box(Modifier.padding(horizontal = 6.dp)) { Track(trackInfo) }
     Spacer(Modifier.height(height = 31.dp))
     CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-      Progress(bufferedPercent, progress, trackInfo.duration, onSeek)
+      Progress(
+        bufferedPercent = bufferedPercent,
+        progress = progress,
+        duration = trackInfo.duration,
+        onSeek = onSeek,
+        onManualProgressChange = { isDragging, newProgress ->
+          draggingProgress = if (isDragging) newProgress else null
+        }
+      )
     }
     Spacer(Modifier.height(height = 3.dp))
-    Box(Modifier.padding(horizontal = 6.dp)) { Timers(progress, trackInfo.duration) }
+    Box(Modifier.padding(horizontal = 6.dp)) {
+      Timers(
+        draggingProgress ?: progress,
+        trackInfo.duration
+      )
+    }
     Spacer(Modifier.height(15.dp))
     Controls(
       repeatMode,
@@ -249,6 +265,7 @@ fun Progress(
   progress: Duration,
   duration: Duration,
   onSeek: (Duration) -> Unit,
+  onManualProgressChange: (Boolean, Duration) -> Unit,
 ) {
   var isDragging by remember { mutableStateOf(false) }
   var sliderValue by remember { mutableFloatStateOf(0f) }
@@ -265,10 +282,12 @@ fun Progress(
     onValueChange = {
       isDragging = true
       sliderValue = it
+      onManualProgressChange(true, it.toLong().milliseconds)
     },
     onValueChangeFinished = {
       onSeek(sliderValue.toLong().milliseconds)
       isDragging = false
+      onManualProgressChange(false, sliderValue.toLong().milliseconds)
     },
     colors = SliderDefaults.colors(
       thumbColor = MaterialTheme.colorScheme.secondary,
