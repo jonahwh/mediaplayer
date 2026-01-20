@@ -2,13 +2,17 @@
 
 package com.example.myapplication
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -33,6 +38,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,6 +61,7 @@ import coil3.compose.AsyncImagePreviewHandler
 import coil3.compose.LocalAsyncImagePreviewHandler
 import com.example.myapplication.ui.theme.MyApplicationTheme
 import com.example.myapplication.ui.theme.Selected
+import kotlinx.coroutines.delay
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -105,24 +113,80 @@ fun Track(trackInfo: TrackInfo) {
       fallback = painterResource(R.drawable.no_art),
     )
     Spacer(Modifier.width(16.dp))
-    Column(Modifier.align(Alignment.CenterVertically)) {
-      Text(
+    Column(
+      Modifier
+        .align(Alignment.CenterVertically)
+        .weight(1f)
+    ) {
+      val titleScrollState = rememberScrollState()
+      val artistScrollState = rememberScrollState()
+      val maxScroll = maxOf(titleScrollState.maxValue, artistScrollState.maxValue)
+
+      LaunchedEffect(maxScroll, trackInfo.title, trackInfo.artist) {
+        if (maxScroll > 0) {
+          while (true) {
+            delay(2000)
+            animate(
+              initialValue = 0f,
+              targetValue = 1f,
+              animationSpec = tween(
+                durationMillis = maxScroll * 15,
+                easing = FastOutSlowInEasing
+              )
+            ) { value, _ ->
+              titleScrollState.dispatchRawDelta((value * titleScrollState.maxValue) - titleScrollState.value)
+              artistScrollState.dispatchRawDelta((value * artistScrollState.maxValue) - artistScrollState.value)
+            }
+            delay(2000)
+            animate(
+              initialValue = 1f,
+              targetValue = 0f,
+              animationSpec = tween(
+                durationMillis = maxScroll * 15,
+                easing = FastOutSlowInEasing
+              )
+            ) { value, _ ->
+              titleScrollState.dispatchRawDelta((value * titleScrollState.maxValue) - titleScrollState.value)
+              artistScrollState.dispatchRawDelta((value * artistScrollState.maxValue) - artistScrollState.value)
+            }
+          }
+        }
+      }
+
+      MarqueeText(
         text = trackInfo.title,
         style = MaterialTheme.typography.titleLarge,
         color = MaterialTheme.colorScheme.onSurface,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis
+        scrollState = titleScrollState
       )
       Spacer(Modifier.height(10.dp))
-      Text(
+      MarqueeText(
         text = trackInfo.artist,
         style = MaterialTheme.typography.headlineSmall,
         color = MaterialTheme.colorScheme.outline,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis
+        scrollState = artistScrollState
       )
     }
   }
+}
+
+@Composable
+fun MarqueeText(
+  text: String,
+  style: TextStyle,
+  color: Color,
+  scrollState: ScrollState,
+  modifier: Modifier = Modifier
+) {
+  Text(
+    text = text,
+    style = style,
+    color = color,
+    maxLines = 1,
+    overflow = TextOverflow.Clip,
+    softWrap = false,
+    modifier = modifier.horizontalScroll(scrollState, enabled = false)
+  )
 }
 
 @Composable
