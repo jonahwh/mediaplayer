@@ -11,6 +11,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -29,10 +30,16 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.ripple.RippleAlpha
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RippleConfiguration
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -280,17 +287,17 @@ private fun formatDuration(duration: Duration): String {
 private fun Controls() {
   Row(
     Modifier.fillMaxWidth(),
-    horizontalArrangement = Arrangement.spacedBy(36.dp, alignment = Alignment.CenterHorizontally),
+    horizontalArrangement = Arrangement.spacedBy(16.dp, alignment = Alignment.CenterHorizontally),
     verticalAlignment = Alignment.CenterVertically
   ) {
     PlayerButton(icon = Icons.Filled.Repeat)
     PlayerButton(icon = Icons.Filled.SkipPrevious)
-    Box(
-      modifier = Modifier
-        .size(72.dp)
-        .clip(CircleShape)
-        .background(Selected),
-      contentAlignment = Alignment.Center
+    Button(
+      onClick = {},
+      modifier = Modifier.size(72.dp),
+      shape = CircleShape,
+      colors = ButtonDefaults.buttonColors(containerColor = Selected),
+      contentPadding = PaddingValues(0.dp)
     ) {
       Icon(
         imageVector = Icons.Filled.Pause,
@@ -306,12 +313,26 @@ private fun Controls() {
 
 @Composable
 private fun PlayerButton(icon: ImageVector) {
-  Icon(
-    imageVector = icon,
-    contentDescription = null,
-    tint = MaterialTheme.colorScheme.onSurface,
-    modifier = Modifier.size(24.dp)
-  )
+  CompositionLocalProvider(
+    LocalRippleConfiguration provides RippleConfiguration(
+      color = MaterialTheme.colorScheme.onPrimary,
+      rippleAlpha = RippleAlpha(
+        draggedAlpha = 0.16f,
+        focusedAlpha = 0.12f,
+        hoveredAlpha = 0.08f,
+        pressedAlpha = 0.5f
+      )
+    )
+  ) {
+    IconButton(onClick = {}) {
+      Icon(
+        imageVector = icon,
+        contentDescription = null,
+        tint = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.size(24.dp)
+      )
+    }
+  }
 }
 
 @Preview(widthDp = 600, heightDp = 400)
