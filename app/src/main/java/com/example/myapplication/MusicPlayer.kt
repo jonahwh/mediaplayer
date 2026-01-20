@@ -2,6 +2,7 @@
 
 package com.example.myapplication
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -21,6 +22,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -116,6 +118,7 @@ private data class HeartParticle(
   val duration: Int,
 )
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun MusicPlayer(
   trackInfo: TrackInfo,
@@ -134,61 +137,75 @@ fun MusicPlayer(
 ) {
   var draggingProgress by remember { mutableStateOf<Duration?>(null) }
 
-  Column(
+  BoxWithConstraints(
     Modifier
       .widthIn(max = 480.dp)
-      .heightIn(max = 297.dp)
       .clip(MaterialTheme.shapes.large)
       .background(
         MaterialTheme.colorScheme.surface
       )
-      .padding(26.dp), verticalArrangement = Arrangement.Top
   ) {
-    Box(Modifier.padding(horizontal = 6.dp)) {
-      AnimatedContent(
-        targetState = trackInfo.artUrl + trackInfo.title,
-        transitionSpec = {
-          if (isForwardAnimation) {
-            slideInHorizontally { it } + fadeIn() togetherWith slideOutHorizontally { -it } + fadeOut()
-          } else {
-            slideInHorizontally { -it } + fadeIn() togetherWith slideOutHorizontally { it } + fadeOut()
-          }
-        },
-        label = "TrackAnimation"
-      ) { _ ->
-        Track(trackInfo)
-      }
-    }
-    Spacer(Modifier.height(height = 31.dp))
-    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
-      Progress(
-        bufferedPercent = bufferedPercent,
-        progress = progress,
-        duration = trackInfo.duration,
-        onSeek = onSeek,
-        onManualProgressChange = { isDragging, newProgress ->
-          draggingProgress = if (isDragging) newProgress else null
+    // 380dp threshold for compact mode
+    val isCompact = maxWidth < 380.dp
+    // 300dp threshold for very compact mode (multi-row controls)
+    val isVeryCompact = maxWidth < 300.dp
+
+    val horizontalPadding = if (isCompact) 16.dp else 26.dp
+    val verticalSpacerHeight = if (isVeryCompact) 10.dp else 31.dp
+    val controlsSpacerHeight = if (isVeryCompact) 4.dp else 15.dp
+
+    Column(
+      Modifier.padding(horizontal = horizontalPadding, vertical = 26.dp),
+      verticalArrangement = Arrangement.Top
+    ) {
+      Box(Modifier.padding(horizontal = 6.dp)) {
+        AnimatedContent(
+          targetState = trackInfo.artUrl + trackInfo.title,
+          transitionSpec = {
+            if (isForwardAnimation) {
+              slideInHorizontally { it } + fadeIn() togetherWith slideOutHorizontally { -it } + fadeOut()
+            } else {
+              slideInHorizontally { -it } + fadeIn() togetherWith slideOutHorizontally { it } + fadeOut()
+            }
+          },
+          label = "TrackAnimation"
+        ) { _ ->
+          Track(trackInfo)
         }
+      }
+      Spacer(Modifier.height(height = verticalSpacerHeight))
+      CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+        Progress(
+          bufferedPercent = bufferedPercent,
+          progress = progress,
+          duration = trackInfo.duration,
+          onSeek = onSeek,
+          onManualProgressChange = { isDragging, newProgress ->
+            draggingProgress = if (isDragging) newProgress else null
+          }
+        )
+      }
+      Spacer(Modifier.height(height = 3.dp))
+      Box(Modifier.padding(horizontal = 6.dp)) {
+        Timers(
+          draggingProgress ?: progress,
+          trackInfo.duration
+        )
+      }
+      Spacer(Modifier.height(controlsSpacerHeight))
+      Controls(
+        repeatMode,
+        onRepeatModeClick,
+        isPlaying,
+        onPlayPauseClick,
+        isFavorite,
+        onFavoriteClick,
+        onNextClick,
+        onPrevClick,
+        isCompact,
+        isVeryCompact
       )
     }
-    Spacer(Modifier.height(height = 3.dp))
-    Box(Modifier.padding(horizontal = 6.dp)) {
-      Timers(
-        draggingProgress ?: progress,
-        trackInfo.duration
-      )
-    }
-    Spacer(Modifier.height(15.dp))
-    Controls(
-      repeatMode,
-      onRepeatModeClick,
-      isPlaying,
-      onPlayPauseClick,
-      isFavorite,
-      onFavoriteClick,
-      onNextClick,
-      onPrevClick
-    )
   }
 }
 
@@ -399,75 +416,119 @@ private fun Controls(
   onFavoriteClick: () -> Unit,
   onNextClick: () -> Unit,
   onPrevClick: () -> Unit,
+  isCompact: Boolean,
+  isVeryCompact: Boolean,
 ) {
-  Row(
-    Modifier.fillMaxWidth(),
-    horizontalArrangement = Arrangement.spacedBy(16.dp, alignment = Alignment.CenterHorizontally),
-    verticalAlignment = Alignment.CenterVertically
-  ) {
-    val repeatIcon = when (repeatMode) {
-      RepeatMode.None -> Icons.Filled.Repeat
-      RepeatMode.All -> Icons.Filled.RepeatOn
-      RepeatMode.One -> Icons.Filled.RepeatOneOn
-    }
-
-    PlayerButton(icon = repeatIcon, onClick = onRepeatModeClick)
-    PlayerButton(icon = Icons.Filled.SkipPrevious, onClick = onPrevClick)
-
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(targetValue = if (isPressed) 1.2f else 1f, label = "scale")
-
-    Button(
-      onClick = onPlayPauseClick,
-      modifier = Modifier
-        .size(72.dp)
-        .scale(scale),
-      shape = CircleShape,
-      colors = ButtonDefaults.buttonColors(containerColor = Selected),
-      contentPadding = PaddingValues(0.dp),
-      interactionSource = interactionSource
+  if (isVeryCompact) {
+    Column(
+      Modifier.fillMaxWidth(),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      Icon(
-        imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-        contentDescription = if (isPlaying) "Pause" else "Play",
-        tint = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.size(48.dp)
-      )
-    }
-    PlayerButton(icon = Icons.Filled.SkipNext, onClick = onNextClick)
-
-    val favoriteIcon = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
-
-    Box(contentAlignment = Alignment.Center) {
-      val hearts = remember { mutableStateListOf<HeartParticle>() }
-
-      hearts.forEach { heart ->
-        FloatingHeart(heart) {
-          hearts.remove(heart)
-        }
+      Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        PlayerButton(icon = Icons.Filled.SkipPrevious, onClick = onPrevClick)
+        PlayPauseButton(isPlaying, onPlayPauseClick)
+        PlayerButton(icon = Icons.Filled.SkipNext, onClick = onNextClick)
       }
 
-      PlayerButton(
-        icon = favoriteIcon,
-        onClick = {
-          if (!isFavorite) {
-            repeat(5) {
-              hearts.add(
-                HeartParticle(
-                  id = Random.nextLong(),
-                  targetX = Random.nextFloat() * 100f - 50f,
-                  targetY = Random.nextFloat() * -100f - 50f,
-                  size = Random.nextFloat() * 10f + 20f,
-                  duration = Random.nextInt(500, 1000)
-                )
-              )
-            }
-          }
-          onFavoriteClick()
-        }
-      )
+      Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        RepeatButton(repeatMode, onRepeatModeClick)
+        FavoriteButton(isFavorite, onFavoriteClick)
+      }
     }
+  } else {
+    Row(
+      Modifier.fillMaxWidth(),
+      horizontalArrangement = if (isCompact) Arrangement.SpaceBetween else Arrangement.spacedBy(
+        16.dp,
+        Alignment.CenterHorizontally
+      ),
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      RepeatButton(repeatMode, onRepeatModeClick)
+      PlayerButton(icon = Icons.Filled.SkipPrevious, onClick = onPrevClick)
+      PlayPauseButton(isPlaying, onPlayPauseClick)
+      PlayerButton(icon = Icons.Filled.SkipNext, onClick = onNextClick)
+      FavoriteButton(isFavorite, onFavoriteClick)
+    }
+  }
+}
+
+@Composable
+private fun RepeatButton(repeatMode: RepeatMode, onClick: () -> Unit) {
+  val repeatIcon = when (repeatMode) {
+    RepeatMode.None -> Icons.Filled.Repeat
+    RepeatMode.All -> Icons.Filled.RepeatOn
+    RepeatMode.One -> Icons.Filled.RepeatOneOn
+  }
+  PlayerButton(icon = repeatIcon, onClick = onClick)
+}
+
+@Composable
+private fun PlayPauseButton(isPlaying: Boolean, onClick: () -> Unit) {
+  val interactionSource = remember { MutableInteractionSource() }
+  val isPressed by interactionSource.collectIsPressedAsState()
+  val scale by animateFloatAsState(targetValue = if (isPressed) 1.2f else 1f, label = "scale")
+
+  Button(
+    onClick = onClick,
+    modifier = Modifier
+      .size(72.dp)
+      .scale(scale),
+    shape = CircleShape,
+    colors = ButtonDefaults.buttonColors(containerColor = Selected),
+    contentPadding = PaddingValues(0.dp),
+    interactionSource = interactionSource
+  ) {
+    Icon(
+      imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+      contentDescription = if (isPlaying) "Pause" else "Play",
+      tint = MaterialTheme.colorScheme.onSurface,
+      modifier = Modifier.size(48.dp)
+    )
+  }
+}
+
+@Composable
+private fun FavoriteButton(isFavorite: Boolean, onClick: () -> Unit) {
+  val favoriteIcon = if (isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder
+
+  Box(contentAlignment = Alignment.Center) {
+    val hearts = remember { mutableStateListOf<HeartParticle>() }
+
+    hearts.forEach { heart ->
+      FloatingHeart(heart) {
+        hearts.remove(heart)
+      }
+    }
+
+    PlayerButton(
+      icon = favoriteIcon,
+      onClick = {
+        if (!isFavorite) {
+          repeat(5) {
+            hearts.add(
+              HeartParticle(
+                id = Random.nextLong(),
+                targetX = Random.nextFloat() * 100f - 50f,
+                targetY = Random.nextFloat() * -100f - 50f,
+                size = Random.nextFloat() * 10f + 20f,
+                duration = Random.nextInt(500, 1000)
+              )
+            )
+          }
+        }
+        onClick()
+      }
+    )
   }
 }
 
